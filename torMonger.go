@@ -4,21 +4,21 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"tor/links"
 )
 
 type urls []string
 
-var routines int
+var recursion int
 var urlFlag urls
 var port string
 
 func init() {
-	// Tie the command-line flag to the urlFlag variable and
-	// set a usage message.
+	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
-	flag.IntVar(&routines, "threads", 20, "The amount of threads/routines to utilize for crawling the Tor network. Use with caution as to many workers can cause issues.")
+	flag.IntVar(&recursion, "threads", 20, "Recursion depth. How deep do you want to go?")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
 }
 
@@ -27,6 +27,7 @@ func (s *urls) String() string {
 	return fmt.Sprint(*s)
 }
 
+//Need to have satisfy the flag value interface when using Var
 func (i *urls) Set(url string) error {
 	for _, u := range strings.Split(url, ",") {
 		*i = append(*i, u)
@@ -34,6 +35,7 @@ func (i *urls) Set(url string) error {
 	return nil
 }
 
+//Call the imported links library and crawl the network.
 func crawl(url string) []string {
 	fmt.Println(url)
 	list, err := links.Extract(url, port)
@@ -64,11 +66,12 @@ func main() {
 			}
 			worklist <- returnedLinks
 		} else {
-			log.Fatal("It appears that you did not provide a link. Please provide a starting URL.")
+			fmt.Println("It appears that you did not provide a URL, Please provide a starting URL.")
+			os.Exit(0)
 		}
 	}()
 
-	for i := 0; i < routines; i++ {
+	for i := 0; i < recursion; i++ {
 		go func() {
 			for link := range unseenLinks {
 				foundLinks := crawl(link)
