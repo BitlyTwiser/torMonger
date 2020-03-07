@@ -71,7 +71,7 @@ func main() {
 		}
 	}()
 
-	for i := 0; i < recursion; i++ {
+	for i := 0; i < depth; i++ {
 		go func() {
 			for link := range unseenLinks {
 				foundLinks := crawl(link)
