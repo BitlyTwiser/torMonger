@@ -24,7 +24,7 @@ func Extract(url, port string) ([]string, error) {
 		return nil, fmt.Errorf("parsing %s as HTML: %v", url, err)
 	}
 
-	// Expand this sectin to account for title and we need an onion validator.
+	// Expand this sectin to account for title.
 	var links []string
 	visitNode := func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "a" {

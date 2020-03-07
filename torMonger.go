@@ -11,14 +11,14 @@ import (
 
 type urls []string
 
-var recursion int
+var depth int
 var urlFlag urls
 var port string
 
 func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
-	flag.IntVar(&recursion, "threads", 20, "Recursion depth. How deep do you want to go?")
+	flag.IntVar(&depth, "depth", 20, "Recursion depth. How deep do you want to go?")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
 }
 
