@@ -1,6 +1,7 @@
 package tor
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -8,13 +9,12 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-func peelOnion(url string) (string, error) {
+func peelOnion(url string) error {
 	//cheap but effective, we should build a regex to validate that http/https is used and that the .onion value is present.
-	if strings.Contains(url, ".onion") {
-		return url, nil
-	} else {
-		return "", fmt.Errorf("The provided link does not appear to be an onion link, ignoring link: %v.", url)
+	if !strings.Contains(url, ".onion") {
+		return errors.New("Provided link is not an onion site. Moving on..")
 	}
+	return nil
 }
 
 //Tunnels traffic through the socks5 proxy.
@@ -30,11 +30,11 @@ func ConnectToProxy(url, port string) (*http.Response, error) {
 	proxyClient := &http.Client{
 		Transport: tr,
 	}
-	u, err := peelOnion(url)
+	err = peelOnion(url)
 	if err != nil {
 		return nil, err
 	} else {
-		resp, err := proxyClient.Get(u)
+		resp, err := proxyClient.Get(url)
 		if err != nil {
 			return nil, fmt.Errorf("Error calling onion service. Error: %v", err)
 		} else {

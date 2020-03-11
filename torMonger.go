@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 	"tor/links"
 )
 
@@ -14,12 +16,14 @@ type urls []string
 var depth int
 var urlFlag urls
 var port string
+var apiEndpoint string
 
 func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
 	flag.IntVar(&depth, "depth", 20, "Recursion depth. How deep do you want to go?")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
+	flag.StringVar(&apiEndpoint, "api", "", "The API endpoint to POST JSON data to. Format: <ip>:<port>")
 }
 
 //Part of the flag.value interface.
@@ -37,12 +41,34 @@ func (i *urls) Set(url string) error {
 
 //Call the imported links library and crawl the network.
 func crawl(url string) []string {
+	if apiEndpoint != "" {
+		sendtoApi(url)
+	}
 	fmt.Println(url)
 	list, err := links.Extract(url, port)
 	if err != nil {
 		log.Print(err)
 	}
 	return list
+}
+
+func sendToApi(url string) {
+	client := http.Client{}
+	req, err := http.NewRequest("POST", apiEndpoint, nil)
+	if err != nil {
+		log.Printf("Error staging request to API endpoint: %v. Error: %v", apiEndpoint, err)
+	}
+	data := url.Values{}
+	data.Add("link", url)
+	data.Add("data", time.Now().Format("Mon Jan 2 15:04:05 MST 2006"))
+	req.PostForm = data
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Error sending data to API. Error: %v", err)
+	}
+	log.Println("Data sent to API.")
 }
 
 func main() {
