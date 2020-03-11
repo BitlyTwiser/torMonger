@@ -23,7 +23,7 @@ func init() {
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
 	flag.IntVar(&depth, "depth", 20, "Recursion depth. How deep do you want to go?")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
-	flag.StringVar(&apiEndpoint, "api", "", "The API endpoint to POST JSON data to. Format: <ip>:<port>")
+	flag.StringVar(&apiEndpoint, "api", nil, "The API endpoint to POST JSON data to. Format: <ip>:<port>")
 }
 
 //Part of the flag.value interface.
@@ -41,7 +41,7 @@ func (i *urls) Set(url string) error {
 
 //Call the imported links library and crawl the network.
 func crawl(url string) []string {
-	if apiEndpoint != "" {
+	if apiEndpoint != nil {
 		sendtoApi(url)
 	}
 	fmt.Println(url)
