@@ -2,10 +2,12 @@
 #
 # Installation script for torCrawl. It tries to move $bin in one of the
 # directories stored in $binpaths.
+binName="torMonger"
+go build -o "$binName"
 
 INSTALL_DIR=$(dirname $0)
 
-bin="$INSTALL_DIR/torMonger"
+bin="$INSTALL_DIR/$binName"
 binpaths="/usr/local/bin /usr/bin"
 
 # This variable contains a nonzero length string in case the script fails

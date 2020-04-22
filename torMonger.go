@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -23,7 +24,7 @@ func init() {
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
 	flag.IntVar(&depth, "depth", 20, "Recursion depth. How deep do you want to go?")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
-	flag.StringVar(&apiEndpoint, "api", nil, "The API endpoint to POST JSON data to. Format: <ip>:<port>")
+	flag.StringVar(&apiEndpoint, "api", "", "The API endpoint to POST JSON data to. Format: <ip>:<port>")
 }
 
 //Part of the flag.value interface.
@@ -41,8 +42,8 @@ func (i *urls) Set(url string) error {
 
 //Call the imported links library and crawl the network.
 func crawl(url string) []string {
-	if apiEndpoint != nil {
-		sendtoApi(url)
+	if apiEndpoint != "" {
+		sendToApi(url)
 	}
 	fmt.Println(url)
 	list, err := links.Extract(url, port)
@@ -52,14 +53,14 @@ func crawl(url string) []string {
 	return list
 }
 
-func sendToApi(url string) {
+func sendToApi(u string) {
 	client := http.Client{}
 	req, err := http.NewRequest("POST", apiEndpoint, nil)
 	if err != nil {
 		log.Printf("Error staging request to API endpoint: %v. Error: %v", apiEndpoint, err)
 	}
 	data := url.Values{}
-	data.Add("link", url)
+	data.Add("link", u)
 	data.Add("data", time.Now().Format("Mon Jan 2 15:04:05 MST 2006"))
 	req.PostForm = data
 	req.Header.Add("Content-Type", "application/json")
@@ -68,11 +69,11 @@ func sendToApi(url string) {
 	if err != nil {
 		log.Printf("Error sending data to API. Error: %v", err)
 	}
-	log.Println("Data sent to API.")
+	log.Printf("Data sent to API. Response: %v\n", resp)
 }
 
 func main() {
-	//necessary to call within main for parsing of flags.
+	//Necessary to call within main for parsing of flags.
 	flag.Parse()
 
 	worklist := make(chan []string)  // lists of URLs, may have duplicates
