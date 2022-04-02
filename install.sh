@@ -5,6 +5,10 @@
 
 INSTALL_DIR=$(dirname $0)
 
+echo "Compiling go binary.."
+
+go build -o torMonger
+
 bin="$INSTALL_DIR/torMonger"
 binpaths="/usr/local/bin /usr/bin"
 
