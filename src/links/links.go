@@ -3,7 +3,7 @@ package links
 import (
 	"fmt"
 	"net/http"
-	"tor/tor"
+	"tor/src/tor"
 
 	"golang.org/x/net/html"
 )

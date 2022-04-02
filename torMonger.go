@@ -6,19 +6,19 @@ import (
 	"log"
 	"os"
 	"strings"
-	"tor/links"
+	"tor/src/links"
 )
 
 type urls []string
 
-var recursion int
+var threads int
 var urlFlag urls
 var port string
 
 func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
-	flag.IntVar(&recursion, "threads", 20, "Recursion depth. How deep do you want to go?")
+	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
 }
 
@@ -71,7 +71,7 @@ func main() {
 		}
 	}()
 
-	for i := 0; i < recursion; i++ {
+	for i := 0; i < threads; i++ {
 		go func() {
 			for link := range unseenLinks {
 				foundLinks := crawl(link)
