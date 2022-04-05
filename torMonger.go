@@ -17,7 +17,7 @@ var port string
 
 func init() {
 	//Init the command line arguments.
-	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
+	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
 	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
 	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
 }

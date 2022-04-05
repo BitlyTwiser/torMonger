@@ -12,6 +12,9 @@ go build -o torMonger
 bin="$INSTALL_DIR/torMonger"
 binpaths="/usr/local/bin /usr/bin"
 
+echo "Creating data location for MongoDB: /var/tmp/mongodb_data "
+mkdir /var/tmp/mongodb_data
+
 # This variable contains a nonzero length string in case the script fails
 # because of missing write permissions.
 is_write_perm_missing=""
