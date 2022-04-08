@@ -37,7 +37,7 @@
 - The above onion link is associated with "The Hidden Wiki".
 - The ```-threads``` flag spawns the selected number of processes to ingest data.
 
-##Docker Images:
+## Docker Images:
 - All data is initially stored within the mongoDB instance.
 - Errors logs are within the logs table
 - Simply just run docker-compose against the provided yaml file to spawn all necessary containers in the environment.

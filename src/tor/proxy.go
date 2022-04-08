@@ -2,10 +2,10 @@ package tor
 
 import (
 	"fmt"
+	"golang.org/x/net/proxy"
 	"net/http"
 	"strings"
-
-	"golang.org/x/net/proxy"
+	"tor/src/logging"
 )
 
 func peelOnion(url string) (string, error) {
@@ -13,6 +13,8 @@ func peelOnion(url string) (string, error) {
 	if strings.Contains(url, ".onion") {
 		return url, nil
 	} else {
+		logging.Log(fmt.Sprintf("The provided link does not appear to be an onion link, ignoring link: %v.", url))
+
 		return "", fmt.Errorf("The provided link does not appear to be an onion link, ignoring link: %v.", url)
 	}
 }
@@ -22,6 +24,8 @@ func ConnectToProxy(url, port string) (*http.Response, error) {
 	//Look into changing the hard coded port, allow user to enter that as a flag and 9150 is the default.
 	dialSocksProxy, err := proxy.SOCKS5("tcp", fmt.Sprintf("127.0.0.1:%v", port), nil, proxy.Direct)
 	if err != nil {
+		logging.Log(fmt.Sprintf("Error connecting to proxy: %s", err))
+
 		fmt.Println("Error connecting to proxy:", err)
 	}
 	tr := &http.Transport{Dial: dialSocksProxy.Dial}
@@ -36,6 +40,8 @@ func ConnectToProxy(url, port string) (*http.Response, error) {
 	} else {
 		resp, err := proxyClient.Get(u)
 		if err != nil {
+			logging.Log(fmt.Sprintf("Error calling onion service. Error: %v %s", err))
+
 			return nil, fmt.Errorf("Error calling onion service. Error: %v", err)
 		} else {
 			return resp, nil

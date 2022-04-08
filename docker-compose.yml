@@ -1,44 +1,31 @@
-# Use root/example as user/password credentials
-version: '3.1'
+version: '3.3'
 
 services:
-
-  mongo:
-    image: mongo
+  db:
+    image: postgres
     restart: always
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: pass
-      MONGO_INITDB_DATABASE: tormonger
+      POSTGRES_DB: 'tormonger'
+      # So you don't have to use root, but you can if you like
+      POSTGRES_USER: 'tormonger'
+      # You can use whatever password you like
+      POSTGRES_PASSWORD: 'Fhl1CJ#Sl7qCh!k!'
     ports:
-      - 27017:27017
+      # <Port exposed> : < Postgresql Port running inside container>
+      - '5432:5432'
+    expose:
+      # Opens port 5432 on the container
+      - '5432'
+      # Where our data will be persisted
     volumes:
-      - ./mongodb_init.js:/docker-entrypoint-initdb.d/mongodb_init.js:ro
-      - mongodata:/data/db
+      - postgresdb:/var/lib/postgresql/data
+      - ./sql/create_tables.sql:/docker-entrypoint-initdb.d/create_tables.sql
 
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: pass
-      ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_PORT: 27017
-      ME_CONFIG_MONGODB_ENABLE_ADMIN: 'true'
-      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
-      ME_CONFIG_MONGODB_AUTH_USERNAME: root
-      ME_CONFIG_MONGODB_AUTH_PASSWORD: pass
-      ME_CONFIG_BASICAUTH_USERNAME: root
-      ME_CONFIG_BASICAUTH_PASSWORD: pass
-    depends_on:
-      - mongo
-
+# Names our volume
 volumes:
-  mongodata:
+  postgresdb:
     driver: local
     driver_opts:
       o: bind
       type: none
-      device: /var/tmp/mongodb_data
+      device: /var/tmp/tormonger_data

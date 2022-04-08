@@ -2,13 +2,14 @@ package links
 
 import (
 	"fmt"
-	"net/http"
-	"tor/src/tor"
-
 	"golang.org/x/net/html"
+	"net/http"
+	"tor/src/database"
+	"tor/src/tor"
 )
 
 func Extract(url, port string) ([]string, error) {
+	db := database.DB{}
 	resp, err := tor.ConnectToProxy(url, port)
 	if err != nil {
 		return nil, err
@@ -26,7 +27,9 @@ func Extract(url, port string) ([]string, error) {
 
 	var links []string
 	visitNode := func(n *html.Node) {
-		fmt.Println(n.Attr)
+		//Look at parsing all attributes here, building the html, saving off into the data table with the link.
+		htmlAttributeParser(n)
+		db.Insert()
 		if n.Type == html.ElementNode && n.Data == "a" {
 			for _, a := range n.Attr {
 				if a.Key != "href" {
@@ -43,6 +46,13 @@ func Extract(url, port string) ([]string, error) {
 	forEachNode(doc, visitNode, nil)
 	return links, nil
 }
+
+func htmlAttributeParser(n *html.Node) {
+	for i, val := range n.Attr {
+		fmt.Sprintf("%d, val: %s", i, val)
+	}
+}
+
 func forEachNode(n *html.Node, pre, post func(n *html.Node)) {
 	if pre != nil {
 		pre(n)
