@@ -5,6 +5,16 @@ CREATE TABLE tormonger_data (
     UNIQUE(link)
 );
 
+CREATE TABLE html_data (
+    id serial PRIMARY KEY,
+    link_hash TEXT NOT NULL,
+    html_data TEXT,
+    CONSTRAINT fk_tormonger_data
+       FOREIGN KEY(link_hash)
+           REFERENCES tormonger_data(link_hash)
+           ON DELETE CASCADE ON UPDATE cascade
+);
+
 CREATE TABLE tormonger_data_sub_directories (
     tormonger_data_id TEXT NOT NULL,
     html_data_id TEXT NOT NULL,
@@ -17,16 +27,6 @@ CREATE TABLE tormonger_data_sub_directories (
     CONSTRAINT html_data
         FOREIGN KEY(html_data_id)
             REFERENCES html_data(id)
-            ON DELETE CASCADE ON UPDATE cascade
-);
-
-CREATE TABLE html_data (
-    id serial PRIMARY KEY,
-    link_hash TEXT NOT NULL,
-    html_data TEXT,
-    CONSTRAINT fk_tormonger_data
-        FOREIGN KEY(link_hash)
-            REFERENCES tormonger_data(link_hash)
             ON DELETE CASCADE ON UPDATE cascade
 );
 

@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"tor/src/links"
+	"tor/src/logging"
 )
 
 type urls []string
@@ -40,7 +40,7 @@ func crawl(url string) []string {
 	fmt.Println(url)
 	list, err := links.Extract(url, port)
 	if err != nil {
-		log.Print(err)
+		logging.LogError(fmt.Errorf("error in crawl function: %s", err))
 	}
 	return list
 }
@@ -60,13 +60,13 @@ func main() {
 				if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
 					returnedLinks = append(returnedLinks, link)
 				} else {
-					log.Println("No protocol Scheme, defaulting to  http.")
+					logging.Log("\"No protocol Scheme, defaulting to  http.\"")
 					returnedLinks = append(returnedLinks, fmt.Sprintf("http://%v", link))
 				}
 			}
 			worklist <- returnedLinks
 		} else {
-			fmt.Println("It appears that you did not provide a URL, Please provide a starting URL.")
+			logging.Log("It appears that you did not provide a URL, Please provide a starting URL.")
 			os.Exit(0)
 		}
 	}()

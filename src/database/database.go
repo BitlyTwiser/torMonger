@@ -16,6 +16,10 @@ func LogError(errorMessage error) {
 	fmt.Errorf(errorMessage.Error())
 }
 
+func Log(message string) {
+
+}
+
 func (db *DB) Update() {
 
 }

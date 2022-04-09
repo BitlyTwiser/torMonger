@@ -5,6 +5,7 @@ import (
 	"golang.org/x/net/html"
 	"net/http"
 	"tor/src/database"
+	"tor/src/logging"
 	"tor/src/tor"
 )
 
@@ -15,6 +16,7 @@ func Extract(url, port string) ([]string, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
+		logging.LogError(fmt.Errorf("getting %s: %s", url, resp.Status))
 		resp.Body.Close()
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
