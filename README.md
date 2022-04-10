@@ -36,6 +36,10 @@
 - ```torMongert -url http://zqktlwiuavvvqqt4ybvgvi7tyo4hjl5xgfuvpdf6otjiycgwqbym2qad.onion/wiki/ -t 1```
 - The above onion link is associated with "The Hidden Wiki".
 - The ```-threads``` flag spawns the selected number of processes to ingest data.
+#### Env Vars:
+- The application takes advantage of a .env file for loading database credentials and values.
+- The .env is included within the project and can be altered to your liking. 
+- Just match the .env credentials with that within the docker-compose file to connect to the database.
 
 ## Docker Images:
 - All data is initially stored within the mongoDB instance.

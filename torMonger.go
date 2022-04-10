@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/joho/godotenv"
+	"log"
 	"os"
 	"strings"
 	"tor/src/links"
@@ -45,9 +47,19 @@ func crawl(url string) []string {
 	return list
 }
 
+func loadEnvFile() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 func main() {
 	//necessary to call within main for parsing of flags.
 	flag.Parse()
+
+	//Load Env Vars
+	loadEnvFile()
 
 	worklist := make(chan []string)  // lists of URLs, may have duplicates
 	unseenLinks := make(chan string) // de-duplicated URLs
