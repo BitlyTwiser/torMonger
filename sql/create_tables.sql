@@ -17,7 +17,7 @@ CREATE TABLE html_data (
 
 CREATE TABLE tormonger_data_sub_directories (
     tormonger_data_id TEXT NOT NULL,
-    html_data_id TEXT NOT NULL,
+    html_data_id serial NOT NULL,
     PRIMARY KEY (tormonger_data_id, html_data_id),
     subdirectory_path TEXT,
     CONSTRAINT fk_tormonger_data
