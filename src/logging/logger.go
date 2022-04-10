@@ -5,13 +5,15 @@ import (
 	"tor/src/database"
 )
 
-//Wraps the application in a generic logging utility that pushes logs into the database.
+var db = database.DatabaseInit()
+
+// LogError Wraps the application in a generic logging utility that pushes logs into the database.
 func LogError(message error) {
 	log.Println(message)
-	database.LogError(message)
+	db.LogError(message)
 }
 
 func Log(message string) {
 	log.Println(message)
-	database.Log(message)
+	db.Log(message)
 }

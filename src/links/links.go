@@ -10,7 +10,7 @@ import (
 )
 
 func Extract(url, port string) ([]string, error) {
-	db := database.DB{}
+	db := database.DatabaseInit()
 	resp, err := tor.ConnectToProxy(url, port)
 	if err != nil {
 		return nil, err
