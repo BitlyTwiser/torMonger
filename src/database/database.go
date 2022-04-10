@@ -27,7 +27,7 @@ func DatabaseInit() DB {
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error initiating database connectino: %s", err.Error()))
+		log.Fatal(fmt.Errorf("error initiating database connection: %s", err.Error()))
 	}
 
 	database := DB{Database: db}

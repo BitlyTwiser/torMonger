@@ -9,6 +9,7 @@ import (
 	"tor/src/tor"
 )
 
+// Extract extracts the html from the onion site, parses html and stores link and data in the database.
 func Extract(url, port string) ([]string, error) {
 	db := database.DatabaseInit()
 	resp, err := tor.ConnectToProxy(url, port)
@@ -49,6 +50,7 @@ func Extract(url, port string) ([]string, error) {
 	return links, nil
 }
 
+// Parses, then re-assembles the html node values in an attempt to re-build a snapshot of the html from the onion site.
 func htmlAttributeParser(n *html.Node) {
 	for i, val := range n.Attr {
 		fmt.Sprintf("%d, val: %s", i, val)
