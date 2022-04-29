@@ -1,13 +1,13 @@
 CREATE TABLE tormonger_data (
-    id serial PRIMARY KEY,
+    id uuid PRIMARY KEY,
     link_hash TEXT NOT NULL,
     link TEXT NOT NULL,
     UNIQUE(link)
 );
 
 CREATE TABLE html_data (
-    id serial PRIMARY KEY,
-    tormonger_data_id serial NOT NULL,
+    id uuid PRIMARY KEY,
+    tormonger_data_id uuid NOT NULL,
     html_data TEXT,
     CONSTRAINT fk_tormonger_data
        FOREIGN KEY(tormonger_data_id)
@@ -16,8 +16,8 @@ CREATE TABLE html_data (
 );
 
 CREATE TABLE tormonger_data_sub_directories (
-    tormonger_data_id serial NOT NULL,
-    html_data_id serial NOT NULL,
+    tormonger_data_id uuid NOT NULL,
+    html_data_id uuid NOT NULL,
     PRIMARY KEY (tormonger_data_id, html_data_id),
     subdirectory_path TEXT,
     CONSTRAINT fk_tormonger_data
