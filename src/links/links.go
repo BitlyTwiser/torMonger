@@ -1,17 +1,24 @@
 package links
 
 import (
+	"encoding/base64"
 	"fmt"
 	"golang.org/x/net/html"
 	"net/http"
+	"regexp"
 	"tor/src/database"
 	"tor/src/logging"
 	"tor/src/tor"
 )
 
+var db = database.DatabaseInit()
+
+type LinkReference struct {
+}
+
+//([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
 // Extract extracts the html from the onion site, parses html and stores link and data in the database.
 func Extract(url, port string) ([]string, error) {
-	db := database.DatabaseInit()
 	resp, err := tor.ConnectToProxy(url, port)
 	if err != nil {
 		return nil, err
@@ -22,6 +29,7 @@ func Extract(url, port string) ([]string, error) {
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
 
+	stripLinkCheckForDuplicates(url)
 	doc, err := html.Parse(resp.Body)
 	resp.Body.Close()
 	if err != nil {
@@ -48,6 +56,29 @@ func Extract(url, port string) ([]string, error) {
 	}
 	forEachNode(doc, visitNode, nil)
 	return links, nil
+}
+
+//
+func stripLinkCheckForDuplicates(link string) {
+	regex, err := regexp.Compile("([^http:\\/\\/||https:\\/\\/||.onion])([a-zA-Z1-9]+)")
+	if err != nil {
+		logging.LogError(fmt.Errorf("error parsing regex: %s", err.Error()))
+	}
+
+	if !regex.MatchString(link) {
+		logging.LogError(fmt.Errorf("error matching onion url to regular expression: %s", link))
+	} else {
+		match := regex.FindString(link)
+		encoded := base64.StdEncoding.EncodeToString([]byte(match))
+		linkReferenceInDatabase(link)
+		fmt.Println(match)
+		fmt.Println(encoded)
+	}
+}
+
+func linkReferenceInDatabase(link string) {
+	linkReference := LinkReference{}
+	db.Find("", linkReference)
 }
 
 // Parses, then re-assembles the html node values in an attempt to re-build a snapshot of the html from the onion site.

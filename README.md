@@ -25,10 +25,10 @@
 - You can now run torMonger using the port designated in the torrc file.
 - Validate ports and the service using netstat.
 - ```netstat -tulpn```
-- Note: The port might be set to 9050, thus you will have to account for this when running the application.
+- Note: If you execute ```tor``` via the cli, the application initiates with port 9050. This is the default port used with tormonger, however, if you execute tor via the tor web browser, 9150 is used.
 
 ## Usage:
-- The torMonger application can be installed by compiling the Go binary and running the install script.
+- The torMonger application can be installed by compiling the Go binary and running the installation script.
 - With the use of Go modules you can perform the installation with ```go install``` then compile the binary.
 - ```sudo ./install.sh```
 - This application was tested and ran on Linux. (Tails OS was used for the runtime environment)

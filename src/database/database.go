@@ -1,33 +1,29 @@
 package database
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	_ "github.com/lib/pq"
-	"log"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"os"
+	"tor/src/logging"
 )
 
 type DB struct {
 	//Need pointer to database database driver
-	Database *sql.DB
+	Database *pgxpool.Pool
 }
 
 func DatabaseInit() DB {
 	databaseUser := os.Getenv("POSTGRES_USER")
 	databaseName := os.Getenv("POSTGRES_DB")
+	databaseHost := os.Getenv("POSTGRES_HOST")
 	databasePort := os.Getenv("5432")
 	databaseUserPassword := os.Getenv("POSTGRES_PASSWORD")
-
-	connStr := fmt.Sprintf("user=%s dbname=%s password=%s port=%s sslmode=verify-full",
-		databaseUser,
-		databaseName,
-		databaseUserPassword,
-		databasePort)
-
-	db, err := sql.Open("postgres", connStr)
+	//postgres://username:password@localhost:5432/database_name
+	db, err := pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s", databaseUser, databaseUserPassword, databaseHost, databasePort, databaseName))
 	if err != nil {
-		log.Fatal(fmt.Errorf("error initiating database connection: %s", err.Error()))
+		logging.LogError(fmt.Errorf("Unable to connect to database: %v\n", err))
+		os.Exit(1)
 	}
 
 	database := DB{Database: db}
@@ -45,6 +41,17 @@ func (db *DB) LogError(errorMessage error) {
 
 func (db *DB) Log(message string) {
 
+}
+
+func (db *DB) Find(query string, resultSet interface{}) (interface{}, error) {
+	defer db.Database.Close()
+
+	err := db.Database.QueryRow(context.Background(), query).Scan(&resultSet)
+	if err != nil {
+		logging.LogError(fmt.Errorf("QueryRow failed: %v\n", err))
+	}
+
+	return resultSet, err
 }
 
 func (db *DB) Update() {

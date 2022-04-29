@@ -21,7 +21,7 @@ func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
 	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
-	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
+	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050")
 }
 
 //Part of the flag.value interface.
@@ -47,6 +47,11 @@ func crawl(url string) []string {
 	return list
 }
 
+// ([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
+func stripLinkCheckForDuplicates(link string) {
+
+}
+
 func loadEnvFile() {
 	err := godotenv.Load()
 	if err != nil {
@@ -66,6 +71,8 @@ func main() {
 
 	// Add command-line arguments to worklist.
 	go func() {
+		//Remember to remove me as I am just for tsting so we can use delve easily as we are lazy.
+		urlFlag = append(urlFlag, "http://zqktlwiuavvvqqt4ybvgvi7tyo4hjl5xgfuvpdf6otjiycgwqbym2qad.onion")
 		var returnedLinks []string
 		if len(urlFlag) > 0 {
 			for _, link := range urlFlag {
