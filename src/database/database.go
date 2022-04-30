@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"os"
-	"tor/src/logging"
 )
 
 type DB struct {
@@ -22,7 +21,7 @@ func DatabaseInit() DB {
 	//postgres://username:password@localhost:5432/database_name
 	db, err := pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s", databaseUser, databaseUserPassword, databaseHost, databasePort, databaseName))
 	if err != nil {
-		logging.LogError(fmt.Errorf("Unable to connect to database: %v\n", err))
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -48,7 +47,7 @@ func (db *DB) Find(query string, resultSet interface{}) (interface{}, error) {
 
 	err := db.Database.QueryRow(context.Background(), query).Scan(&resultSet)
 	if err != nil {
-		logging.LogError(fmt.Errorf("QueryRow failed: %v\n", err))
+		db.LogError(fmt.Errorf("QueryRow failed: %v\n", err))
 	}
 
 	return resultSet, err
