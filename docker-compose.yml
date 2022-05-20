@@ -9,7 +9,7 @@ services:
       # So you don't have to use root, but you can if you like
       POSTGRES_USER: 'tormonger'
       # You can use whatever password you like
-      POSTGRES_PASSWORD: 'Fhl1CJ#Sl7qCh!k!'
+      POSTGRES_PASSWORD: 'password'
     ports:
       # <Port exposed> : < Postgresql Port running inside container>
       - '5432:5432'

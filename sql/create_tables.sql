@@ -1,12 +1,12 @@
 CREATE TABLE tormonger_data (
-    id uuid PRIMARY KEY,
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     link_hash TEXT NOT NULL,
     link TEXT NOT NULL,
     UNIQUE(link)
 );
 
 CREATE TABLE html_data (
-    id uuid PRIMARY KEY,
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     tormonger_data_id uuid NOT NULL,
     html_data TEXT,
     CONSTRAINT fk_tormonger_data
@@ -31,8 +31,7 @@ CREATE TABLE tormonger_data_sub_directories (
 );
 
 CREATE TABLE logs (
-    error_id INT generated always as identity,
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     error_message VARCHAR(250),
-    notes VARCHAR(250),
-    PRIMARY KEY(error_id)
+    notes VARCHAR(250)
 );

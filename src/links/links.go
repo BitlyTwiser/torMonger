@@ -3,22 +3,16 @@ package links
 import (
 	"encoding/base64"
 	"fmt"
-	uuid "github.com/jackc/pgtype/ext/gofrs-uuid"
-	"golang.org/x/net/html"
 	"net/http"
 	"regexp"
 	"tor/src/database"
 	"tor/src/logging"
 	"tor/src/tor"
+
+	"golang.org/x/net/html"
 )
 
 var db = database.DatabaseInit()
-
-type LinkReference struct {
-	Id       uuid.UUID
-	LinkHash string
-	Link     string
-}
 
 //([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
 // Extract extracts the html from the onion site, parses html and stores link and data in the database.
@@ -74,18 +68,22 @@ func stripLinkCheckForDuplicates(link string) {
 	} else {
 		match := regex.FindString(link)
 		encoded := base64.StdEncoding.EncodeToString([]byte(match))
-		linkReferenceInDatabase(encoded)
+		if !linkReferenceInDatabase(encoded) {
+			fmt.Println("Sup")
+			//Log value in database
+		}
 		fmt.Println(match)
 		fmt.Println(encoded)
 	}
 }
 
-func linkReferenceInDatabase(link string) {
-	values, err := db.Find(fmt.Sprintf("SELECT * FROM tormonger_data WHERE link_hash = %s", link), LinkReference{})
+func linkReferenceInDatabase(link string) bool {
+	values, err := db.FindLinkReference(link, database.LinkReference{})
 	if err != nil {
-		logging.LogError(fmt.Errorf("errror retreuiving values from database: %s", err))
+		logging.LogError(fmt.Errorf("errror retreiving values from database: %s", err))
 	}
 	fmt.Println(values)
+	return true
 }
 
 // Parses, then re-assembles the html node values in an attempt to re-build a snapshot of the html from the onion site.

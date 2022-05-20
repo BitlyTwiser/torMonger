@@ -3,8 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"log"
 	"os"
+
+	"github.com/gofrs/uuid"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 type DB struct {
@@ -12,14 +16,25 @@ type DB struct {
 	Database *pgxpool.Pool
 }
 
+func loadEnvFile() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+}
+
 func DatabaseInit() DB {
+	//Load Env Vars
+	loadEnvFile()
+
 	databaseUser := os.Getenv("POSTGRES_USER")
 	databaseName := os.Getenv("POSTGRES_DB")
 	databaseHost := os.Getenv("POSTGRES_HOST")
-	databasePort := os.Getenv("5432")
+	databasePort := os.Getenv("POSTGRES_PORT")
 	databaseUserPassword := os.Getenv("POSTGRES_PASSWORD")
 	//postgres://username:password@localhost:5432/database_name
-	db, err := pgxpool.Connect(context.Background(), fmt.Sprintf("postgres://%s:%s@%s:%s/%s", databaseUser, databaseUserPassword, databaseHost, databasePort, databaseName))
+	databaseConnectionString := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", databaseUser, databaseUserPassword, databaseHost, databasePort, databaseName)
+	db, err := pgxpool.Connect(context.Background(), databaseConnectionString)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
@@ -30,24 +45,33 @@ func DatabaseInit() DB {
 	return database
 }
 
+func (db *DB) GenerateUUID() string {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		db.LogError(fmt.Errorf("error generating UUID: %s", err.Error()))
+	}
+
+	return fmt.Sprintf("%v", uuid)
+}
+
 //Logs Error to DB and prints error message for user to view.
 func (db *DB) LogError(errorMessage error) {
-
-	db.Insert()
-
-	fmt.Errorf(errorMessage.Error())
+	_, err := db.Database.Exec(context.Background(), "INSERT INTO logs(id, error_message, notes) VALUES($1, $2, $3)", db.GenerateUUID(), errorMessage.Error(), "")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+	}
 }
 
 func (db *DB) Log(message string) {
 
 }
 
-func (db *DB) Find(query string, resultSet interface{}) (interface{}, error) {
+func (db *DB) FindLinkReference(link string, resultSet LinkReference) (LinkReference, error) {
 	defer db.Database.Close()
 
-	err := db.Database.QueryRow(context.Background(), query).Scan(&resultSet)
+	err := db.Database.QueryRow(context.Background(), "SELECT * FROM tormonger_data WHERE link_hash=$1", link).Scan(&resultSet)
 	if err != nil {
-		db.LogError(fmt.Errorf("QueryRow failed: %v\n", err))
+		db.LogError(fmt.Errorf("queryRow failed: %v", err))
 	}
 
 	return resultSet, err
