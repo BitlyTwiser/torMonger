@@ -14,10 +14,12 @@ type urls []string
 var threads int
 var urlFlag urls
 var port string
+var overrideHtml bool
 
 func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
+	flag.BoolVar(&overrideHtml, "ovrdhtml", false, "Will override stored html data in database if this flag is thrown.")
 	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
 	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050")
 }
@@ -38,7 +40,7 @@ func (i *urls) Set(url string) error {
 //Call the imported links library and crawl the network.
 func crawl(url string) []string {
 	fmt.Println(url)
-	list, err := links.Extract(url, port)
+	list, err := links.Extract(url, port, overrideHtml)
 	if err != nil {
 		logging.LogError(fmt.Errorf("error in crawl function: %s", err))
 	}
