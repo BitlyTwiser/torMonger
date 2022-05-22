@@ -121,7 +121,7 @@ func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id s
 	return id
 }
 
-func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues) {
+func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues, htmlReferenceData HtmlDataReference) {
 
 }
 

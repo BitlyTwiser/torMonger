@@ -17,4 +17,5 @@ type HtmlDataReference struct {
 	TormongerDataId               string `json:"tormonger_data_id,omitempty"`
 	TormongerDataSubDirectoriesId string `json:"tormonger_data_sub_directories_id,omitempty"`
 	HtmlData                      string `json:"html_data,omitempty"`
+	FoundValues                   bool
 }

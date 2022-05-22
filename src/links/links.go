@@ -19,6 +19,8 @@ var db = database.DatabaseInit()
 //([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
 // Extract extracts the html from the onion site, parses html and stores link and data in the database.
 func Extract(url, port string, overrideHtml bool) ([]string, error) {
+	tormongerData := types.TormongerDataValues{}
+	htmlReferenceData := database.HtmlDataReference{}
 	resp, err := tor.ConnectToProxy(url, port)
 	if err != nil {
 		return nil, err
@@ -29,9 +31,9 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
 
-	tormongerData := parseLinkAttributesFindOrCreate(url)
+	parseLinkAttributesFindOrCreate(url, &tormongerData, &htmlReferenceData)
 	if tormongerData.FoundValues || overrideHtml {
-		db.CreateOrUpdateHtmlData(returnRawHtmlData(resp), tormongerData)
+		db.CreateOrUpdateHtmlData(returnRawHtmlData(resp), tormongerData, htmlReferenceData)
 	}
 
 	doc, err := html.Parse(resp.Body)
@@ -73,8 +75,7 @@ func returnRawHtmlData(response *http.Response) string {
 }
 
 // Will only update data for newfound values unless overrideHtml is
-func parseLinkAttributesFindOrCreate(link string) types.TormongerDataValues {
-	tormongerData := types.TormongerDataValues{}
+func parseLinkAttributesFindOrCreate(link string, tormongerData *types.TormongerDataValues, htmlReferenceData *database.HtmlDataReference) {
 	var hasSubDirInDatabase bool = false
 	var tormongerSubDirId string
 
@@ -83,13 +84,13 @@ func parseLinkAttributesFindOrCreate(link string) types.TormongerDataValues {
 	if err != nil {
 		logging.LogError(fmt.Errorf("error parsing regex: %s", err.Error()))
 		tormongerData.FoundValues = false
-		return tormongerData
+		return
 	}
 
 	if !regex.MatchString(link) {
 		logging.LogError(fmt.Errorf("error matching onion url to regular expression: %s", link))
 		tormongerData.FoundValues = false
-		return tormongerData
+		return
 	} else {
 		match := regex.FindString(link)
 		hasReference, tormongerDataId := linkReferenceInDatabase(base64EncodeString(match))
@@ -109,19 +110,17 @@ func parseLinkAttributesFindOrCreate(link string) types.TormongerDataValues {
 			tormongerSubDirId = createSubDirectoryRecord(link, subDirsMatch, tormongerDataId)
 			tormongerData.FoundValues = true
 		}
-		if !tormongerData.FoundValues && !linkHasHtmlRecords(tormongerDataId) {
+		if !tormongerData.FoundValues && !linkHasHtmlRecords(tormongerDataId, htmlReferenceData) {
 			// Add all values to struct in case overrideHTML was thrown.
 			logging.Log(fmt.Sprintf("All data already exists for %s in database. No new data will be added.", link))
 			tormongerData.TormongerDataId = tormongerDataId
 			tormongerData.TormongerDataSubDirId = tormongerSubDirId
 			tormongerData.FoundValues = false
-			return tormongerData
+			return
 		}
 
 		tormongerData.TormongerDataId = tormongerDataId
 		tormongerData.TormongerDataSubDirId = tormongerSubDirId
-
-		return tormongerData
 	}
 }
 
@@ -175,16 +174,21 @@ func base64EncodeString(stringToEncode string) string {
 	return base64.StdEncoding.EncodeToString([]byte(stringToEncode))
 }
 
-func linkHasHtmlRecords(tormongerDataId string) bool {
+func linkHasHtmlRecords(tormongerDataId string, htmlData *database.HtmlDataReference) bool {
 	values, err := db.FindHtmlRecordForLink(tormongerDataId, database.HtmlDataReference{})
 	if err != nil {
 		logging.LogError(fmt.Errorf("error obtaining value from subdirectory match: %s", err.Error()))
 	}
 
 	if len(values.TormongerDataId) > 0 {
+		htmlData.FoundValues = true
+		htmlData.Id = values.Id
+		htmlData.TormongerDataId = values.TormongerDataId
+		htmlData.TormongerDataSubDirectoriesId = values.TormongerDataSubDirectoriesId
 		return true
 	}
 
+	htmlData.FoundValues = false
 	return false
 }
 
