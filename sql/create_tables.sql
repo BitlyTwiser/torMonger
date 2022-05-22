@@ -43,4 +43,4 @@ CREATE INDEX idx_html_data on html_data(tormonger_data_id, tormonger_data_sub_di
 
 CREATE INDEX idx_tormonger_data on tormonger_data(id, link_hash);
 
-CREATE INDEX idx_tormonger_data_sub_directories on tormonger_data_sub_directories(id, tormonger_data_id);
+CREATE INDEX idx_tormonger_data_sub_directories on tormonger_data_sub_directories(id, tormonger_data_id, subdirectory_path);

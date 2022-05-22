@@ -7,8 +7,8 @@ type LinkReference struct {
 }
 
 type SubdirctoryReference struct {
+	Id               string `json:"id,omitempty"`
 	TormongerDataId  string `json:"tormonger_data_id,omitempty"`
-	HtmlDataId       string `json:"html_data_id,omitempty"`
 	SubdirectoryPath string `json:"subdirectory_path,omitempty"`
 }
 

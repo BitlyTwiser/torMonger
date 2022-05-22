@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"tor/src/types"
 
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -83,8 +84,8 @@ func (db *DB) FindLinkReference(link string, resultSet LinkReference) (LinkRefer
 	return resultSet, err
 }
 
-func (db *DB) FindSubDirectoryMatch(subdirectoryHash string, resultSet SubdirctoryReference) (SubdirctoryReference, error) {
-	rows, err := db.Database.Query(context.Background(), "SELECT id, link_hash, link FROM tormonger_data_sub_directories WHERE subdirectory_path=$1", subdirectoryHash)
+func (db *DB) FindSubDirectoryMatch(tormongerDataId, subdirectoryHash string, resultSet SubdirctoryReference) (SubdirctoryReference, error) {
+	rows, err := db.Database.Query(context.Background(), "SELECT id, tormonger_data_id, subdirectory_path FROM tormonger_data_sub_directories WHERE tormonger_data_id=$1 AND subdirectory_path=$2", tormongerDataId, subdirectoryHash)
 	if err != nil {
 		db.LogError(fmt.Errorf("queryRow failed: %v", err))
 	}
@@ -92,7 +93,7 @@ func (db *DB) FindSubDirectoryMatch(subdirectoryHash string, resultSet Subdircto
 
 	//If no rows, make value in the tormong_data_subdirectories table
 	for rows.Next() {
-		rows.Scan(&resultSet.TormongerDataId, &resultSet.HtmlDataId, &resultSet.SubdirectoryPath)
+		rows.Scan(&resultSet.Id, &resultSet.TormongerDataId, &resultSet.SubdirectoryPath)
 	}
 
 	return resultSet, err
@@ -118,6 +119,10 @@ func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id s
 	}
 
 	return id
+}
+
+func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues) {
+
 }
 
 func (db *DB) FindHtmlRecordForLink(tormongerDataId string, resultSet HtmlDataReference) (HtmlDataReference, error) {

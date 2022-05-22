@@ -3,20 +3,16 @@ package links
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	"tor/src/database"
 	"tor/src/logging"
 	"tor/src/tor"
+	"tor/src/types"
 
 	"golang.org/x/net/html"
 )
-
-type tormongerDataValues struct {
-	tormongerDataId       string
-	tormongerDataSubDirId string
-	foundValues           bool
-}
 
 var db = database.DatabaseInit()
 
@@ -33,7 +29,11 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
 
-	recordId := parseLinkAttributesFindOrCreate(url)
+	tormongerData := parseLinkAttributesFindOrCreate(url)
+	if tormongerData.FoundValues || overrideHtml {
+		db.CreateOrUpdateHtmlData(returnRawHtmlData(resp), tormongerData)
+	}
+
 	doc, err := html.Parse(resp.Body)
 	resp.Body.Close()
 	if err != nil {
@@ -42,12 +42,6 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 
 	var links []string
 	visitNode := func(n *html.Node) {
-		//Look at parsing all attributes here, building the html, saving off into the data table with the link.
-		// Only parse if we have an object id.
-		if recordId.foundValues || overrideHtml {
-			htmlAttributeParser(n, recordId.tormongerDataId)
-		}
-
 		if n.Type == html.ElementNode && n.Data == "a" {
 			for _, a := range n.Attr {
 				if a.Key != "href" {
@@ -65,9 +59,22 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 	return links, nil
 }
 
+// This is due to my own laziness, I could reconstruct the HTML from the html.Node itself and parse the values of each
+// node attributes into a string, but alas, I did not want to.
+func returnRawHtmlData(response *http.Response) string {
+	responseData, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		logging.LogError(fmt.Errorf("getting error from pasrsing data%s:", err.Error))
+	}
+
+	responseString := string(responseData)
+
+	return responseString
+}
+
 // Will only update data for newfound values unless overrideHtml is
-func parseLinkAttributesFindOrCreate(link string) tormongerDataValues {
-	tormongerData := tormongerDataValues{}
+func parseLinkAttributesFindOrCreate(link string) types.TormongerDataValues {
+	tormongerData := types.TormongerDataValues{}
 	var hasSubDirInDatabase bool = false
 	var tormongerSubDirId string
 
@@ -75,13 +82,13 @@ func parseLinkAttributesFindOrCreate(link string) tormongerDataValues {
 	regex, err := regexp.Compile("([^http:\\/\\/||https:\\/\\/||.onion])([a-zA-Z1-9]+)")
 	if err != nil {
 		logging.LogError(fmt.Errorf("error parsing regex: %s", err.Error()))
-		tormongerData.foundValues = false
+		tormongerData.FoundValues = false
 		return tormongerData
 	}
 
 	if !regex.MatchString(link) {
 		logging.LogError(fmt.Errorf("error matching onion url to regular expression: %s", link))
-		tormongerData.foundValues = false
+		tormongerData.FoundValues = false
 		return tormongerData
 	} else {
 		match := regex.FindString(link)
@@ -89,30 +96,30 @@ func parseLinkAttributesFindOrCreate(link string) tormongerDataValues {
 		hasSubdirectories, subDirsMatch := linkHasSubdirectories(link)
 
 		if hasSubdirectories {
-			hasSubDirInDatabase, tormongerSubDirId = subDirExistsInDatabase(link, subDirsMatch)
+			hasSubDirInDatabase, tormongerSubDirId = subDirExistsInDatabase(tormongerDataId, subDirsMatch)
 		}
 
 		if !hasReference {
 			//Log value in database then capture html
 			tormongerDataId = createTormongerDataRecord(link, match)
-			tormongerData.foundValues = true
+			tormongerData.FoundValues = true
 		}
 		if hasSubdirectories && !hasSubDirInDatabase {
 			//Strip subdomain and check if it already exists as well
 			tormongerSubDirId = createSubDirectoryRecord(link, subDirsMatch, tormongerDataId)
-			tormongerData.foundValues = true
+			tormongerData.FoundValues = true
 		}
-		if !tormongerData.foundValues && !linkHasHtmlRecords(tormongerDataId) {
+		if !tormongerData.FoundValues && !linkHasHtmlRecords(tormongerDataId) {
 			// Add all values to struct in case overrideHTML was thrown.
 			logging.Log(fmt.Sprintf("All data already exists for %s in database. No new data will be added.", link))
-			tormongerData.tormongerDataId = tormongerDataId
-			tormongerData.tormongerDataSubDirId = tormongerSubDirId
-			tormongerData.foundValues = false
+			tormongerData.TormongerDataId = tormongerDataId
+			tormongerData.TormongerDataSubDirId = tormongerSubDirId
+			tormongerData.FoundValues = false
 			return tormongerData
 		}
 
-		tormongerData.tormongerDataId = tormongerDataId
-		tormongerData.tormongerDataSubDirId = tormongerSubDirId
+		tormongerData.TormongerDataId = tormongerDataId
+		tormongerData.TormongerDataSubDirId = tormongerSubDirId
 
 		return tormongerData
 	}
@@ -140,11 +147,11 @@ func linkHasSubdirectories(link string) (bool, string) {
 	return false, ""
 }
 
-func subDirExistsInDatabase(link, subdirectoriesMatch string) (bool, string) {
+func subDirExistsInDatabase(tormongerDataId, subdirectoriesMatch string) (bool, string) {
 	//Parse Subdirectories
 	//Find the URL up until the .onion, then cut away leaving only subdirs.
 
-	values, err := db.FindSubDirectoryMatch(base64EncodeString(subdirectoriesMatch), database.SubdirctoryReference{})
+	values, err := db.FindSubDirectoryMatch(tormongerDataId, subdirectoriesMatch, database.SubdirctoryReference{})
 	if err != nil {
 		logging.LogError(fmt.Errorf("error obtaining value from subdirectory match: %s", err.Error()))
 	}
@@ -197,7 +204,7 @@ func linkReferenceInDatabase(link string) (bool, string) {
 // Parses, then re-assembles the html node values in an attempt to re-build a snapshot of the html from the onion site.
 //Uses the ID's of the created database elements and inserts html data for these records in the html data table.
 // stores data then into html_data table.
-func htmlAttributeParser(n *html.Node, recordId string) {
+func htmlAttributeParser(n *html.Node, tormongerData string) {
 	for i, val := range n.Attr {
 		fmt.Sprintf("%d, val: %s", i, val)
 	}
