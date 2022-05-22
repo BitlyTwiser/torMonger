@@ -37,3 +37,10 @@ CREATE TABLE logs (
     log_message VARCHAR(250),
     log_type VARCHAR(250)
 );
+
+-- Creating Index's for efficiency
+CREATE INDEX idx_html_data on html_data(tormonger_data_id, tormonger_data_sub_directories_id);
+
+CREATE INDEX idx_tormonger_data on tormonger_data(id, link_hash);
+
+CREATE INDEX idx_tormonger_data_sub_directories on tormonger_data_sub_directories(id, tormonger_data_id);

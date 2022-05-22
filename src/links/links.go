@@ -33,7 +33,7 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 		return nil, fmt.Errorf("getting %s: %s", url, resp.Status)
 	}
 
-	recordId := stripLinkCheckForDuplicates(url)
+	recordId := parseLinkAttributesFindOrCreate(url)
 	doc, err := html.Parse(resp.Body)
 	resp.Body.Close()
 	if err != nil {
@@ -66,9 +66,9 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 }
 
 // Will only update data for newfound values unless overrideHtml is
-func stripLinkCheckForDuplicates(link string) tormongerDataValues {
+func parseLinkAttributesFindOrCreate(link string) tormongerDataValues {
 	tormongerData := tormongerDataValues{}
-	var hasSubDir bool = false
+	var hasSubDirInDatabase bool = false
 	var tormongerSubDirId string
 
 	//Parse out original onion link
@@ -89,7 +89,7 @@ func stripLinkCheckForDuplicates(link string) tormongerDataValues {
 		hasSubdirectories, subDirsMatch := linkHasSubdirectories(link)
 
 		if hasSubdirectories {
-			hasSubDir, tormongerSubDirId = subDirExists(link, subDirsMatch)
+			hasSubDirInDatabase, tormongerSubDirId = subDirExistsInDatabase(link, subDirsMatch)
 		}
 
 		if !hasReference {
@@ -97,14 +97,15 @@ func stripLinkCheckForDuplicates(link string) tormongerDataValues {
 			tormongerDataId = createTormongerDataRecord(link, match)
 			tormongerData.foundValues = true
 		}
-		if !hasSubDir {
+		if hasSubdirectories && !hasSubDirInDatabase {
 			//Strip subdomain and check if it already exists as well
 			tormongerSubDirId = createSubDirectoryRecord(link, subDirsMatch, tormongerDataId)
 			tormongerData.foundValues = true
 		}
-		if !tormongerData.foundValues {
+		if !tormongerData.foundValues && !linkHasHtmlRecords(tormongerDataId) {
 			// Add all values to struct in case overrideHTML was thrown.
 			logging.Log(fmt.Sprintf("All data already exists for %s in database. No new data will be added.", link))
+			tormongerData.tormongerDataId = tormongerDataId
 			tormongerData.tormongerDataSubDirId = tormongerSubDirId
 			tormongerData.foundValues = false
 			return tormongerData
@@ -139,7 +140,7 @@ func linkHasSubdirectories(link string) (bool, string) {
 	return false, ""
 }
 
-func subDirExists(link, subdirectoriesMatch string) (bool, string) {
+func subDirExistsInDatabase(link, subdirectoriesMatch string) (bool, string) {
 	//Parse Subdirectories
 	//Find the URL up until the .onion, then cut away leaving only subdirs.
 
@@ -165,6 +166,19 @@ func createTormongerDataRecord(link, match string) string {
 
 func base64EncodeString(stringToEncode string) string {
 	return base64.StdEncoding.EncodeToString([]byte(stringToEncode))
+}
+
+func linkHasHtmlRecords(tormongerDataId string) bool {
+	values, err := db.FindHtmlRecordForLink(tormongerDataId, database.HtmlDataReference{})
+	if err != nil {
+		logging.LogError(fmt.Errorf("error obtaining value from subdirectory match: %s", err.Error()))
+	}
+
+	if len(values.TormongerDataId) > 0 {
+		return true
+	}
+
+	return false
 }
 
 func linkReferenceInDatabase(link string) (bool, string) {
