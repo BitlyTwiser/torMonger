@@ -136,8 +136,6 @@ func linkHasSubdirectories(link string) (bool, string) {
 		return false, ""
 	}
 
-	found := regex.FindString(link)
-	fmt.Println(found)
 	subdirectoriesMatch := regex.ReplaceAllString(link, "")
 	if len(subdirectoriesMatch) > 0 {
 		return true, subdirectoriesMatch

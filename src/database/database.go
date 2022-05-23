@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"tor/src/types"
 
 	"github.com/gofrs/uuid"
@@ -84,8 +85,8 @@ func (db *DB) FindLinkReference(link string, resultSet LinkReference) (LinkRefer
 	return resultSet, err
 }
 
-func (db *DB) FindSubDirectoryMatch(tormongerDataId, subdirectoryHash string, resultSet SubdirctoryReference) (SubdirctoryReference, error) {
-	rows, err := db.Database.Query(context.Background(), "SELECT id, tormonger_data_id, subdirectory_path FROM tormonger_data_sub_directories WHERE tormonger_data_id=$1 AND subdirectory_path=$2", tormongerDataId, subdirectoryHash)
+func (db *DB) FindSubDirectoryMatch(tormongerDataId, subdirectoryPath string, resultSet SubdirctoryReference) (SubdirctoryReference, error) {
+	rows, err := db.Database.Query(context.Background(), "SELECT id, tormonger_data_id, subdirectory_path FROM tormonger_data_sub_directories WHERE tormonger_data_id=$1 AND subdirectory_path=$2", tormongerDataId, subdirectoryPath)
 	if err != nil {
 		db.LogError(fmt.Errorf("queryRow failed: %v", err))
 	}
@@ -113,7 +114,7 @@ func (db *DB) CreateTormongDataRecord(linkHash, link string) string {
 // Return ID
 func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id string) string {
 	var id string
-	err := db.Database.QueryRow(context.Background(), "INSERT INTO tormonger_data_sub_directories(id, tormonger_data_id, html_data_id, subdirectory_path) VALUES($1, $2, $3, $4) RETURNING id", db.GenerateUUID(), tormonger_id, nil, subdirectoriesMatch).Scan(&id)
+	err := db.Database.QueryRow(context.Background(), "INSERT INTO tormonger_data_sub_directories(id, tormonger_data_id, subdirectory_path) VALUES($1, $2, $3) RETURNING id", db.GenerateUUID(), tormonger_id, subdirectoriesMatch).Scan(&id)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
 	}
@@ -122,7 +123,34 @@ func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id s
 }
 
 func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues, htmlReferenceData HtmlDataReference) {
+	//Assemble query for if there is a subdir or not using string buider
+	var baseString strings.Builder
+	fmt.Fprintf(&baseString, "UPDATE html_data SET ")
 
+	if htmlReferenceData.FoundValues {
+		if len(tormongerData.TormongerDataSubDirId) > 0 {
+			fmt.Fprintf(&baseString, "tormonger_data_id=%s, tormonger_data_sub_directories_id=%s, html_data=%s) WHERE id=%s",
+				tormongerData.TormongerDataId,
+				tormongerData.TormongerDataSubDirId,
+				htmlData,
+				htmlReferenceData.Id)
+		} else {
+			fmt.Fprintf(&baseString, "tormonger_data_id=%s, html_data=%s) WHERE id=%s",
+				tormongerData.TormongerDataId,
+				htmlData,
+				htmlReferenceData.Id)
+		}
+		err := db.Database.QueryRow(context.Background(), baseString.String())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+		}
+
+	} else {
+		_, err := db.Database.Exec(context.Background(), "INSERT INTO html_data(id, tormonger_data_id, tormonger_data_sub_directories_id, html_data) VALUES($1, $2, $3, $4)", db.GenerateUUID(), tormongerData.TormongerDataId, tormongerData.TormongerDataSubDirId, htmlData)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+		}
+	}
 }
 
 func (db *DB) FindHtmlRecordForLink(tormongerDataId string, resultSet HtmlDataReference) (HtmlDataReference, error) {
