@@ -16,7 +16,6 @@ import (
 
 var db = database.DatabaseInit()
 
-//([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
 // Extract extracts the html from the onion site, parses html and stores link and data in the database.
 func Extract(url, port string, overrideHtml bool) ([]string, error) {
 	tormongerData := types.TormongerDataValues{}
@@ -33,6 +32,8 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 
 	parseLinkAttributesFindOrCreate(url, &tormongerData, &htmlReferenceData)
 	if tormongerData.FoundValues || overrideHtml {
+		//wtf, somehow passing in the base resp is beign modified somewhere in the io command. -_-
+		//THis breaks the node when we parse for a href...
 		db.CreateOrUpdateHtmlData(returnRawHtmlData(resp), tormongerData, htmlReferenceData)
 	}
 
@@ -201,15 +202,6 @@ func linkReferenceInDatabase(link string) (bool, string) {
 	}
 
 	return false, ""
-}
-
-// Parses, then re-assembles the html node values in an attempt to re-build a snapshot of the html from the onion site.
-//Uses the ID's of the created database elements and inserts html data for these records in the html data table.
-// stores data then into html_data table.
-func htmlAttributeParser(n *html.Node, tormongerData string) {
-	for i, val := range n.Attr {
-		fmt.Sprintf("%d, val: %s", i, val)
-	}
 }
 
 func forEachNode(n *html.Node, pre, post func(n *html.Node)) {

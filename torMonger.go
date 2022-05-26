@@ -21,7 +21,7 @@ func init() {
 	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
 	flag.BoolVar(&overrideHtml, "ovrdhtml", false, "Will override stored html data in database if this flag is thrown.")
 	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
-	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050")
+	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050, thus this is the default.")
 }
 
 //Part of the flag.value interface.
@@ -45,11 +45,6 @@ func crawl(url string) []string {
 		logging.LogError(fmt.Errorf("error in crawl function: %s", err))
 	}
 	return list
-}
-
-// ([^http:\/\/||https:\/\/||.onion])([a-zA-Z1-9]+)
-func stripLinkCheckForDuplicates(link string) {
-
 }
 
 func main() {
@@ -93,6 +88,10 @@ func main() {
 	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
 	for list := range worklist {
+		if len(list) == 0 {
+			logging.Log("It appears there were no further links found while crawling, please provide another URL.")
+			os.Exit(0)
+		}
 		for _, link := range list {
 			if !seen[link] {
 				seen[link] = true

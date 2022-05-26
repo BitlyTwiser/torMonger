@@ -35,7 +35,8 @@ CREATE TABLE html_data (
 CREATE TABLE logs (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
     log_message VARCHAR(250),
-    log_type VARCHAR(250)
+    log_type VARCHAR(250),
+    created_at timestamp default current_timestamp
 );
 
 -- Creating Index's for efficiency

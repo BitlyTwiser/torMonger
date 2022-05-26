@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+
 	"tor/src/types"
 
 	"github.com/gofrs/uuid"
@@ -58,14 +58,14 @@ func (db *DB) GenerateUUID() string {
 
 //Logs Error to DB and prints error message for user to view.
 func (db *DB) LogError(errorMessage error) {
-	_, err := db.Database.Exec(context.Background(), "INSERT INTO logs(id, log_message, log_type) VALUES($1, $2, $3)", db.GenerateUUID(), errorMessage.Error(), "Error")
+	_, err := db.Database.Exec(context.Background(), "INSERT INTO logs(id, log_message, log_type, created_at) VALUES($1, $2, $3, NOW())", db.GenerateUUID(), errorMessage.Error(), "Error")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
 	}
 }
 
 func (db *DB) Log(message string) {
-	_, err := db.Database.Exec(context.Background(), "INSERT INTO logs(id, log_message, log_type) VALUES($1, $2, $3)", db.GenerateUUID(), message, "Log")
+	_, err := db.Database.Exec(context.Background(), "INSERT INTO logs(id, log_message, log_type, created_at) VALUES($1, $2, $3, NOW())", db.GenerateUUID(), message, "Log")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
 	}
@@ -123,32 +123,43 @@ func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id s
 }
 
 func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues, htmlReferenceData HtmlDataReference) {
-	//Assemble query for if there is a subdir or not using string buider
-	var baseString strings.Builder
-	fmt.Fprintf(&baseString, "UPDATE html_data SET ")
-
 	if htmlReferenceData.FoundValues {
 		if len(tormongerData.TormongerDataSubDirId) > 0 {
-			fmt.Fprintf(&baseString, "tormonger_data_id=%s, tormonger_data_sub_directories_id=%s, html_data=%s) WHERE id=%s",
+			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET tormonger_data_id=$1, tormonger_data_sub_directories_id=$2, html_data=$3 WHERE id=$4",
 				tormongerData.TormongerDataId,
 				tormongerData.TormongerDataSubDirId,
 				htmlData,
 				htmlReferenceData.Id)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error in updating HTML data for htmlRefernece id: %s\nError:%v\n", htmlReferenceData.Id, err)
+			}
 		} else {
-			fmt.Fprintf(&baseString, "tormonger_data_id=%s, html_data=%s) WHERE id=%s",
+			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET tormonger_data_id=$1, html_data=$2 WHERE id=$3",
 				tormongerData.TormongerDataId,
 				htmlData,
 				htmlReferenceData.Id)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error in updating HTML data for htmlRefernece id: %s\nError:%v\n", htmlReferenceData.Id, err)
+			}
 		}
-		err := db.Database.QueryRow(context.Background(), baseString.String())
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
-		}
-
 	} else {
-		_, err := db.Database.Exec(context.Background(), "INSERT INTO html_data(id, tormonger_data_id, tormonger_data_sub_directories_id, html_data) VALUES($1, $2, $3, $4)", db.GenerateUUID(), tormongerData.TormongerDataId, tormongerData.TormongerDataSubDirId, htmlData)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+		if len(tormongerData.TormongerDataSubDirId) > 0 {
+			_, err := db.Database.Exec(context.Background(), "INSERT INTO html_data(id, tormonger_data_id, tormonger_data_sub_directories_id, html_data) VALUES($1, $2, $3, $4)",
+				db.GenerateUUID(),
+				tormongerData.TormongerDataId,
+				tormongerData.TormongerDataSubDirId,
+				htmlData)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+			}
+		} else {
+			_, err := db.Database.Exec(context.Background(), "INSERT INTO html_data(id, tormonger_data_id, html_data) VALUES($1, $2, $3)",
+				db.GenerateUUID(),
+				tormongerData.TormongerDataId,
+				htmlData)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error in creating log record%v\n", err)
+			}
 		}
 	}
 }
