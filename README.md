@@ -38,7 +38,7 @@
 - The ```-threads``` flag spawns the selected number of processes to ingest data.
 
 - When the application is executed one would expect to see the following output:
-[Output](./images/running_example.png)
+![Output](./images/running_example.png)
 
 #### Env Vars:
 - The application takes advantage of a .env file for loading database credentials and values.
@@ -55,13 +55,13 @@
 
 ## Data stroage and Example data:
 - The primary column is the tormonger_data column, which stores the base link url and the base64 encoded link hash.
-[tormonger data column example](./images/tormonger_data_column.png)
+![tormonger data column example](./images/tormonger_data_column.png)
 - When the application is running succesfully, you will obtain snapshots of the html data from each webpage within the html_data table.
-[html data table](./images/html_table_example.png)
+![html data table](./images/html_table_example.png)
 - The html is stored in the html_data column, which is direct html that can be pulled out and viewed.
-[html data example](./images/html_example.png)
+![html data example](./images/html_example.png)
 - subdirectories can be seen in the ```tormonger_data_sub_directories``` table.
-[subdirectories](./images/sub_dirs.png)
+![subdirectories](./images/sub_dirs.png)
 - you can search for subdirs based off of the id for the link you desire and search html data either by subdirectory or by main link id.
 - index's were used on the primary elements of each column for faster lookup times.
 
