@@ -3,23 +3,25 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
-	"tor/links"
+	"tor/src/links"
+	"tor/src/logging"
 )
 
 type urls []string
 
-var recursion int
+var threads int
 var urlFlag urls
 var port string
+var overrideHtml bool
 
 func init() {
 	//Init the command line arguments.
-	flag.Var(&urlFlag, "url", "Base URL's to initiate the crawler.")
-	flag.IntVar(&recursion, "threads", 20, "Recursion depth. How deep do you want to go?")
-	flag.StringVar(&port, "port", "9150", "The socks5 port to send the requests to.")
+	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
+	flag.BoolVar(&overrideHtml, "overridehtml", false, "Will override stored html data in database if this flag is thrown.")
+	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
+	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050, thus this is the default.")
 }
 
 //Part of the flag.value interface.
@@ -38,9 +40,9 @@ func (i *urls) Set(url string) error {
 //Call the imported links library and crawl the network.
 func crawl(url string) []string {
 	fmt.Println(url)
-	list, err := links.Extract(url, port)
+	list, err := links.Extract(url, port, overrideHtml)
 	if err != nil {
-		log.Print(err)
+		logging.LogError(fmt.Errorf("error in crawl function: %s", err))
 	}
 	return list
 }
@@ -60,18 +62,18 @@ func main() {
 				if strings.HasPrefix(link, "http://") || strings.HasPrefix(link, "https://") {
 					returnedLinks = append(returnedLinks, link)
 				} else {
-					log.Println("No protocol Scheme, defaulting to  http.")
+					logging.Log("\"No protocol Scheme, defaulting to  http.\"")
 					returnedLinks = append(returnedLinks, fmt.Sprintf("http://%v", link))
 				}
 			}
 			worklist <- returnedLinks
 		} else {
-			fmt.Println("It appears that you did not provide a URL, Please provide a starting URL.")
+			logging.Log("It appears that you did not provide a URL, Please provide a starting URL.")
 			os.Exit(0)
 		}
 	}()
 
-	for i := 0; i < recursion; i++ {
+	for i := 0; i < threads; i++ {
 		go func() {
 			for link := range unseenLinks {
 				foundLinks := crawl(link)
@@ -84,6 +86,10 @@ func main() {
 	// and sends the unseen ones to the crawlers.
 	seen := make(map[string]bool)
 	for list := range worklist {
+		if len(list) == 0 {
+			logging.Log("It appears there were no further links found while crawling, please provide another URL.")
+			os.Exit(0)
+		}
 		for _, link := range list {
 			if !seen[link] {
 				seen[link] = true
