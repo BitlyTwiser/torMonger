@@ -13,7 +13,7 @@ bin="$INSTALL_DIR/torMonger"
 binpaths="/usr/local/bin /usr/bin"
 
 echo "Creating data location for PSQL database data: /var/tmp/tormonger_data "
-mkdir /var/tmp/mongodb_data
+mkdir /var/tmp/tormonger_data
 
 # This variable contains a nonzero length string in case the script fails
 # because of missing write permissions.

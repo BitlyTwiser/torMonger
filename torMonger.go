@@ -19,7 +19,7 @@ var overrideHtml bool
 func init() {
 	//Init the command line arguments.
 	flag.Var(&urlFlag, "url", "Base URL to initiate the crawler.")
-	flag.BoolVar(&overrideHtml, "ovrdhtml", false, "Will override stored html data in database if this flag is thrown.")
+	flag.BoolVar(&overrideHtml, "overridehtml", false, "Will override stored html data in database if this flag is thrown.")
 	flag.IntVar(&threads, "threads", 1, "how many threads to spawn. Set at 1 initially, but can run as many as your hardware allows")
 	flag.StringVar(&port, "port", "9050", "The socks5 port to send the requests to. When one runs tor from CLI, the initial port is 9050, thus this is the default.")
 }
@@ -56,8 +56,6 @@ func main() {
 
 	// Add command-line arguments to worklist.
 	go func() {
-		//Remember to remove me as I am just for tsting so we can use delve easily as we are lazy.
-		urlFlag = append(urlFlag, "http://zqktlwiuavvvqqt4ybvgvi7tyo4hjl5xgfuvpdf6otjiycgwqbym2qad.onion")
 		var returnedLinks []string
 		if len(urlFlag) > 0 {
 			for _, link := range urlFlag {
