@@ -125,17 +125,14 @@ func (db *DB) CreateSubDirectoryRecord(link, subdirectoriesMatch, tormonger_id s
 func (db *DB) CreateOrUpdateHtmlData(htmlData string, tormongerData types.TormongerDataValues, htmlReferenceData HtmlDataReference) {
 	if htmlReferenceData.FoundValues {
 		if len(tormongerData.TormongerDataSubDirId) > 0 {
-			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET tormonger_data_id=$1, tormonger_data_sub_directories_id=$2, html_data=$3 WHERE id=$4",
-				tormongerData.TormongerDataId,
-				tormongerData.TormongerDataSubDirId,
+			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET html_data=$3 WHERE id=$4",
 				htmlData,
 				htmlReferenceData.Id)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error in updating HTML data for htmlRefernece id: %s\nError:%v\n", htmlReferenceData.Id, err)
 			}
 		} else {
-			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET tormonger_data_id=$1, html_data=$2 WHERE id=$3",
-				tormongerData.TormongerDataId,
+			_, err := db.Database.Exec(context.Background(), "UPDATE html_data SET html_data=$2 WHERE id=$3",
 				htmlData,
 				htmlReferenceData.Id)
 			if err != nil {

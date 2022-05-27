@@ -20,10 +20,13 @@ var db = database.DatabaseInit()
 func Extract(url, port string, overrideHtml bool) ([]string, error) {
 	tormongerData := types.TormongerDataValues{}
 	htmlReferenceData := database.HtmlDataReference{}
+
 	resp, err := tor.ConnectToProxy(url, port)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		logging.LogError(fmt.Errorf("getting %s: %s", url, resp.Status))
 		resp.Body.Close()
@@ -32,13 +35,16 @@ func Extract(url, port string, overrideHtml bool) ([]string, error) {
 
 	parseLinkAttributesFindOrCreate(url, &tormongerData, &htmlReferenceData)
 	if tormongerData.FoundValues || overrideHtml {
-		//wtf, somehow passing in the base resp is beign modified somewhere in the io command. -_-
-		//THis breaks the node when we parse for a href...
-		db.CreateOrUpdateHtmlData(returnRawHtmlData(resp), tormongerData, htmlReferenceData)
+		resp, err := tor.ConnectToProxy(url, port)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		htmlData := returnRawHtmlData(resp)
+		db.CreateOrUpdateHtmlData(htmlData, tormongerData, htmlReferenceData)
 	}
 
 	doc, err := html.Parse(resp.Body)
-	resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("parsing %s as HTML: %v", url, err)
 	}
