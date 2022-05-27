@@ -36,6 +36,10 @@
 - ```torMonger -url http://zqktlwiuavvvqqt4ybvgvi7tyo4hjl5xgfuvpdf6otjiycgwqbym2qad.onion/wiki/ -t 1```
 - The above onion link is associated with "The Hidden Wiki".
 - The ```-threads``` flag spawns the selected number of processes to ingest data.
+
+- When the application is executed one would expect to see the following output:
+[Output](./images/running_example.png)
+
 #### Env Vars:
 - The application takes advantage of a .env file for loading database credentials and values.
 - The .env is included within the project and can be altered to your liking. 
